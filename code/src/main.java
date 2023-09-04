@@ -12,6 +12,7 @@ import java.io.IOException;
 
 public class main {
 
+    // Given a set of bounds for a GUI element, render a rectangle with a given graphics context for a buffered image
     private static void paintImage(Graphics2D g, String[] coordinates) throws IOException {
         int x = Integer.parseInt(coordinates[0]);
         int y = Integer.parseInt(coordinates[1]);
@@ -23,53 +24,73 @@ public class main {
         g.drawRect(x, y, Math.abs(x - xOffset), Math.abs(y-yOffset));
     }
 
-    private static void saveImage(BufferedImage guiPicture, String filename) throws IOException {
-        ImageIO.write(guiPicture, "PNG", new File("output/" + filename));
+    // Save buffered image to output folder
+    private static void saveImage(BufferedImage guiPicture, String filename, String outputDirectory) throws IOException {
+        ImageIO.write(guiPicture, "PNG", new File(outputDirectory + "/" + filename));
     }
 
+    // args[0] = absolute path of input folder
+    // args[1] = absolute path of output folder
     public static void main(String[] args) {
 
-        File folder = new File("input");
+        String inputDir = args[0];
+        String outputDir = args[1];
+
+        File folder = new File(inputDir);
         File[] listOfFiles = folder.listFiles();
 
-        for (File file : listOfFiles) {
-            if (file.getName().endsWith("xml")) {
+        // for each pair of files in the input folder
 
-                String filename = file.getName().substring(0, file.getName().length() - 4);
+        if (listOfFiles != null) {
+            for (File file : listOfFiles) {
 
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                // only create one output image per xml/png pair by processing xml files only
 
-                try {
+                if (file.getName().endsWith("xml")) {
 
-                    BufferedImage guiPicture = ImageIO.read(new File("input/" + filename + ".png"));
-                    Graphics2D g = (Graphics2D) guiPicture.getGraphics();
+                    String filename = file.getName().substring(0, file.getName().length() - 4);
 
-                    DocumentBuilder builder = factory.newDocumentBuilder();
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
-                    Document document = builder.parse(new File("input/" + filename + ".xml"));
+                    try {
 
-                    document.getDocumentElement().normalize();
+                        // make buffered image out of png input and create associated graphics context to render on
 
-                    NodeList guiElements = document.getElementsByTagName("node");
-                    for (int i = 0; i < guiElements.getLength(); i++) {
-                        if (!guiElements.item(i).hasChildNodes()) {
-                            Element e = (Element) guiElements.item(i);
-                            String bounds = e.getAttribute("bounds").replace("[", "").replace("]", ",");
-                            String[] arr = bounds.split(",");
-                            paintImage(g, arr);
+                        BufferedImage guiPicture = ImageIO.read(new File(inputDir + "/" + filename + ".png"));
+                        Graphics2D g = (Graphics2D) guiPicture.getGraphics();
+
+                        DocumentBuilder builder = factory.newDocumentBuilder();
+
+                        // parse xml input and create list of components tagged with "node"
+
+                        Document document = builder.parse(new File(inputDir + "/" + filename + ".xml"));
+
+                        document.getDocumentElement().normalize();
+
+                        NodeList nodes = document.getElementsByTagName("node");
+
+                        // for each node in the list, if the node does not have any children, it is a gui element
+                            // get the bounds of that node and perform string manipulation to cast the bounds info as an array
+                            // send that array to the paintImage function where a rectangle will be drawn given the bounds
+
+                        for (int i = 0; i < nodes.getLength(); i++) {
+                            if (!nodes.item(i).hasChildNodes()) {
+                                Element e = (Element) nodes.item(i);
+                                String bounds = e.getAttribute("bounds").replace("[", "").replace("]", ",");
+                                String[] arr = bounds.split(",");
+                                paintImage(g, arr);
+                            }
                         }
+
+                        // save the image after the entire xml is parsed and all rectangles are rendered on the graphics context
+
+                        saveImage(guiPicture, filename + ".png", outputDir);
+
+                    } catch (ParserConfigurationException | SAXException | IOException e) {
+                        e.printStackTrace();
                     }
 
-                    saveImage(guiPicture, filename + ".png");
-
-                } catch (ParserConfigurationException e) {
-                    e.printStackTrace();
-                } catch (SAXException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-
             }
         }
     }

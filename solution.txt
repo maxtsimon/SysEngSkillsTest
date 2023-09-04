@@ -1,0 +1,18 @@
+I have a bit of experience working with file IO in Python, so I chose Java to try something new. Given the files within
+the input folder, I created a for loop to iterate through those files, but since there should only be half as many
+output files, I have the condition that the filename should end in .xml. From there, for every pair of input files I
+take the filename sans the extension to create a buffered image out of the png and a list of all node components from a
+parsed version of the xml. I iterate over the node components, searching for nodes without children, since these leaf
+nodes are the gui components. I get the bounds for each gui component, and send that information over to a function
+called paintImage() which renders a rectangle (placed according to the bounds) onto a Graphics2D context for the
+buffered image. Once all the childless nodes of a given xml have been iterated over, the Graphics2D surface has been
+fully marked up and the original buffered image can be saved to a new file containing all the annotations.
+
+I do some string manipulation on the bounds before casting to an array to make that process possible. I need the four
+numeric substrings, which I eventually parseInt since the rectangle constructor requires Integer arguments. Some
+arithmetic is required to construct the rectangle because in Java, the rectangle constructor requires coordinates for
+the top left corner of the shape, as well as a height and width. To determine the height and width of the rectangle, I
+take the absolute value of the difference of the x and y coordinates respectively.
+
+Since this repository can be set up in any way on any device, I decided not to hardcode input and output directories.
+With the command line arguments, there is greater flexibility on the user end for storing files.
